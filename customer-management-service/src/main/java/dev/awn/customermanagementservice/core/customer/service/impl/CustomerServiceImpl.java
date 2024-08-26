@@ -48,12 +48,6 @@ public class CustomerServiceImpl implements CustomerService {
     public CustomerDTO createCustomer(CustomerDTO customerDTO) {
         Customer customer = customerMapper.toModel(customerDTO);
 
-        logger.info("will be checking if id is empty");
-        if(customer.getId() != null) {
-            logger.warn("newly created customer cannot contain a pre-generated id - {}", customerDTO.getId());
-            throw new BadRequestException("newly created customer cannot contain a pre-generated id - " + customerDTO.getId());
-        }
-
         String legalId = customer.getLegalId();
         logger.info("will be checking if a customer already exists with legalId - {}", legalId);
         Optional<Customer> customerOptional = customerRepository.findByLegalId(legalId);
@@ -63,6 +57,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         customer.setCreationTime(LocalDateTime.now());
+        customer.setId(null);
 
         logger.info("will be saving newly created customer");
         customerRepository.save(customer);

@@ -7,17 +7,11 @@ import dev.awn.customermanagementservice.core.customer.dto.CustomerDTO;
 import dev.awn.customermanagementservice.core.customer.mapper.CustomerMapper;
 import dev.awn.customermanagementservice.core.customer.model.Customer;
 import dev.awn.customermanagementservice.core.customer.repository.CustomerRepository;
-import dev.awn.customermanagementservice.core.customer.service.CustomerService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.Optional;
 
@@ -87,21 +81,32 @@ public class CustomerServiceImplTest {
     }
 
     @Test
-    void testCreateCustomer_WhenIdIsPresent_ThrowsBadRequestException() {
+    void testCreateCustomer_WhenCustomerDTOIsValid_ReturnsCreatedCustomerDTO() {
         // arrange
         CustomerDTO customerDTO = CustomerDTO.builder()
-                                             .id(1000001L)
+                                             .name("John Doe")
+                                             .legalId("LEGAL123")
+                                             .address("123 Main St")
+                                             .type(CustomerType.RETAIL)
                                              .build();
         Customer customer = Customer.builder()
-                                    .id(1000001L)
+                                    .name("John Doe")
+                                    .legalId("LEGAL123")
+                                    .address("123 Main St")
+                                    .type(CustomerType.RETAIL)
                                     .build();
+
         when(customerMapper.toModel(customerDTO)).thenReturn(customer);
+        when(customerRepository.findByLegalId(customerDTO.getLegalId())).thenReturn(Optional.empty());
+        when(customerMapper.toDto(customer)).thenReturn(customerDTO);
 
         // act
-        BadRequestException thrown = assertThrows(BadRequestException.class, () -> customerService.createCustomer(customerDTO));
+        CustomerDTO result = customerService.createCustomer(customerDTO);
 
         // assert
-        assertEquals("newly created customer cannot contain a pre-generated id - " + customerDTO.getId(), thrown.getMessage());
+        assertNotNull(result);
+        assertEquals(customerDTO.getLegalId(), result.getLegalId());
+        verify(customerRepository).save(customer);
     }
 
 
