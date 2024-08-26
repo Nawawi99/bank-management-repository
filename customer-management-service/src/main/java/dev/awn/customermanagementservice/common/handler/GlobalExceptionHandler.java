@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
@@ -19,6 +20,7 @@ import java.util.List;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadRequestException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handle(BadRequestException ex) {
 
         ErrorResponse errorResponse = new ErrorResponse(LocalDateTime.now(),
@@ -32,6 +34,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InternalServerErrorException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<ErrorResponse> handle
             (InternalServerErrorException ex) {
         String errorMessage = "The service faced an issue, try again later: " + ex.getMessage();
@@ -48,6 +51,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handle(MethodArgumentNotValidException ex) {
         List<String> errorMessages = new ArrayList<>();
 
@@ -68,6 +72,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handle(HttpMessageNotReadableException ex) {
         ErrorResponse errorResponse = new ErrorResponse(LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -80,6 +85,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataAccessException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<ErrorResponse> handle(DataAccessException ex) {
         ErrorResponse errorResponse = new ErrorResponse(LocalDateTime.now(),
                 HttpStatus.SERVICE_UNAVAILABLE.value(),
@@ -92,6 +98,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public ResponseEntity<ErrorResponse> handle(ResourceNotFoundException ex) {
         ErrorResponse errorResponse = new ErrorResponse(LocalDateTime.now(),
                 HttpStatus.NOT_FOUND.value(),
