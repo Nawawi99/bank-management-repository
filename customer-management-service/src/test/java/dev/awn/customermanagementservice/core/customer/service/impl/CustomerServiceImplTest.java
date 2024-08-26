@@ -7,11 +7,17 @@ import dev.awn.customermanagementservice.core.customer.dto.CustomerDTO;
 import dev.awn.customermanagementservice.core.customer.mapper.CustomerMapper;
 import dev.awn.customermanagementservice.core.customer.model.Customer;
 import dev.awn.customermanagementservice.core.customer.repository.CustomerRepository;
+import dev.awn.customermanagementservice.core.customer.service.CustomerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.Optional;
 
@@ -19,8 +25,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 public class CustomerServiceImplTest {
-
 
     @Mock
     private CustomerRepository customerRepository;
@@ -33,24 +39,23 @@ public class CustomerServiceImplTest {
 
     private static final long MINIMUM_ID = 1000000L;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
-
     @Test
     void testGetCustomer_WhenIdIsValid_ReturnsCustomerDTO() {
-        // Given
+        // arrange
         long id = 1000001L;
         Customer customer = new Customer();
+        customer.setId(1000001L);
+
         CustomerDTO customerDTO = new CustomerDTO();
+        customerDTO.setId(1000001L);
+
         when(customerRepository.findById(id)).thenReturn(Optional.of(customer));
         when(customerMapper.toDto(customer)).thenReturn(customerDTO);
 
-        // When
+        // act
         CustomerDTO result = customerService.getCustomer(id);
 
-        // Then
+        // asset
         assertNotNull(result);
         verify(customerRepository).findById(id);
         verify(customerMapper).toDto(customer);
@@ -58,93 +63,120 @@ public class CustomerServiceImplTest {
 
     @Test
     void testGetCustomer_WhenIdIsInvalid_ThrowsBadRequestException() {
-        // Given
+        // arrange
         long id = MINIMUM_ID - 1;
 
-        // When & Then
+        // act
         BadRequestException thrown = assertThrows(BadRequestException.class, () -> customerService.getCustomer(id));
+
+        // assert
         assertEquals("invalid id - " + id, thrown.getMessage());
     }
 
     @Test
     void testGetCustomer_WhenCustomerNotFound_ThrowsResourceNotFoundException() {
-        // Given
+        // arrange
         long id = 1000001L;
         when(customerRepository.findById(id)).thenReturn(Optional.empty());
 
-        // When & Then
+        // act
         ResourceNotFoundException thrown = assertThrows(ResourceNotFoundException.class, () -> customerService.getCustomer(id));
+
+        // assert
         assertEquals("no customer was found of id - " + id, thrown.getMessage());
     }
 
     @Test
     void testCreateCustomer_WhenIdIsPresent_ThrowsBadRequestException() {
-        // Given
-        CustomerDTO customerDTO = new CustomerDTO();
-        customerDTO.setId(1000001L);
+        // arrange
+        CustomerDTO customerDTO = CustomerDTO.builder()
+                                             .id(1000001L)
+                                             .build();
+        Customer customer = Customer.builder()
+                                    .id(1000001L)
+                                    .build();
+        when(customerMapper.toModel(customerDTO)).thenReturn(customer);
 
-        // When & Then
+        // act
         BadRequestException thrown = assertThrows(BadRequestException.class, () -> customerService.createCustomer(customerDTO));
+
+        // assert
         assertEquals("newly created customer cannot contain a pre-generated id - " + customerDTO.getId(), thrown.getMessage());
     }
 
 
     @Test
     void testCreateCustomer_WhenLegalIdExists_ThrowsBadRequestException() {
-        // Given
-        CustomerDTO customerDTO = new CustomerDTO();
-        customerDTO.setLegalId("LEGAL123");
-        Customer customer = new Customer();
+        // arrange
+        String legalId = "QWE";
+        CustomerDTO customerDTO = CustomerDTO.builder()
+                                             .legalId(legalId)
+                                             .build();
+        Customer customer = Customer.builder()
+                                    .legalId(legalId)
+                                    .build();
+        Customer existingCustomer = Customer.builder()
+                                            .legalId(legalId)
+                                            .build();
         when(customerMapper.toModel(customerDTO)).thenReturn(customer);
-        when(customerRepository.findByLegalId("LEGAL123")).thenReturn(Optional.of(customer));
+        when(customerRepository.findByLegalId(legalId)).thenReturn(Optional.of(existingCustomer));
 
-        // When & Then
+        // act
         BadRequestException thrown = assertThrows(BadRequestException.class, () -> customerService.createCustomer(customerDTO));
-        assertEquals("invalid legalId, customer already exists with this legalId - LEGAL123", thrown.getMessage());
+
+        // assert
+        assertEquals("invalid legalId, customer already exists with this legalId - QWE", thrown.getMessage());
     }
 
     @Test
     void testModifyCustomer_WhenIdIsNull_ThrowsBadRequestException() {
-        // Given
+        // arrange
         CustomerDTO customerDTO = new CustomerDTO();
-        customerDTO.setId(null);
 
-        // When & Then
+        // act
         BadRequestException thrown = assertThrows(BadRequestException.class, () -> customerService.modifyCustomer(customerDTO));
+
+        // assert
         assertEquals("invalid id - null", thrown.getMessage());
     }
 
     @Test
     void testModifyCustomer_WhenCustomerNotFound_ThrowsResourceNotFoundException() {
-        // Given
-        CustomerDTO customerDTO = new CustomerDTO();
-        customerDTO.setId(1000001L);
-        when(customerRepository.findById(1000001L)).thenReturn(Optional.empty());
+        // arrange
+        long id = 1000000L;
+        CustomerDTO customerDTO =  CustomerDTO.builder()
+                                              .id(id)
+                                              .build();
+        when(customerRepository.findById(id)).thenReturn(Optional.empty());
 
-        // When & Then
+        // act
         ResourceNotFoundException thrown = assertThrows(ResourceNotFoundException.class, () -> customerService.modifyCustomer(customerDTO));
-        assertEquals("no customer found of id - 1000001", thrown.getMessage());
+
+        // assert
+        assertEquals("no customer found of id - 1000000", thrown.getMessage());
     }
 
     @Test
     void testRemoveCustomer_WhenIdIsInvalid_ThrowsBadRequestException() {
-        // Given
+        // arrange
         long id = MINIMUM_ID - 1;
 
-        // When & Then
+        // act
         BadRequestException thrown = assertThrows(BadRequestException.class, () -> customerService.removeCustomer(id));
+
+        // assert
         assertEquals("invalid id - " + id, thrown.getMessage());
     }
 
     @Test
     void testRemoveCustomer_WhenIdIsValid_RemovesCustomer() {
-        // Given
-        long id = 1000001L;
+        // arrange
+        long id = 1000000L;
 
-        // When
+        // act
         boolean result = customerService.removeCustomer(id);
 
-        // Then
+        // assert
         assertTrue(result);
         verify(customerRepository).deleteById(id);
     }
