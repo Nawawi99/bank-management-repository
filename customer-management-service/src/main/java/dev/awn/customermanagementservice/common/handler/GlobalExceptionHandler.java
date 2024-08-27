@@ -33,23 +33,6 @@ public class GlobalExceptionHandler {
                              .body(errorResponse);
     }
 
-    @ExceptionHandler(InternalServerErrorException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<ErrorResponse> handle
-            (InternalServerErrorException ex) {
-        String errorMessage = "The service faced an issue, try again later: " + ex.getMessage();
-
-        ErrorResponse errorResponse = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                errorMessage
-        );
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                             .body(errorResponse);
-    }
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handle(MethodArgumentNotValidException ex) {
@@ -85,7 +68,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataAccessException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public ResponseEntity<ErrorResponse> handle(DataAccessException ex) {
         ErrorResponse errorResponse = new ErrorResponse(LocalDateTime.now(),
                 HttpStatus.SERVICE_UNAVAILABLE.value(),
@@ -93,7 +76,7 @@ public class GlobalExceptionHandler {
                 "Service database faced an issue, try again later"
         );
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                              .body(errorResponse);
     }
 
