@@ -162,6 +162,31 @@ public class CustomerServiceImplTest {
     }
 
     @Test
+    void testModifyCustomer_WhenCustomerWithLegalIdExistsWithDifferentId_ThrowsBadRequestException() {
+        long id = 1_000_000;
+        String legalId = "QWE";
+        CustomerDTO customerDTO = CustomerDTO.builder()
+                                             .id(id)
+                                             .legalId(legalId)
+                                             .build();
+        Customer customer = Customer.builder()
+                                    .id(id)
+                                    .legalId(legalId)
+                                    .build();
+        Customer existingCustomer = Customer.builder()
+                                            .id(1_000_001L)
+                                            .legalId(legalId)
+                                            .build();
+//        when(customerMapper.toModel(customerDTO)).thenReturn(customer);
+        when(customerRepository.findById(id)).thenReturn(Optional.of(customer));
+        when(customerRepository.findByLegalId(legalId)).thenReturn(Optional.of(existingCustomer));
+
+        BadRequestException thrown = assertThrows(BadRequestException.class, () -> customerService.modifyCustomer(customerDTO));
+
+        assertEquals("a customer already exists with legalId of - QWE", thrown.getMessage());
+    }
+
+    @Test
     void testRemoveCustomer_WhenIdIsInvalid_ThrowsBadRequestException() {
         // arrange
         long id = MINIMUM_ID - 1;
