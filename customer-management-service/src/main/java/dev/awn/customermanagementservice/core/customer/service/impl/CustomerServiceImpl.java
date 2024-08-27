@@ -19,6 +19,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CustomerServiceImpl implements CustomerService {
     private final long MINIMUM_ID_RANGE = 1_000_000;
+    private final long MAXIMUM_ID_RANGE = 9_999_999;
     private final static Logger logger = LoggerFactory.getLogger(CustomerServiceImpl.class);
 
     private final CustomerRepository customerRepository;
@@ -27,7 +28,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public CustomerDTO getCustomer(long id) {
         logger.info("will be checking if id - {} is valid", id);
-        if(id < MINIMUM_ID_RANGE) {
+        if(id < MINIMUM_ID_RANGE || id >= MAXIMUM_ID_RANGE) {
             logger.warn("invalid id - {}", id);
             throw new BadRequestException("invalid id - " + id);
         }
@@ -70,7 +71,7 @@ public class CustomerServiceImpl implements CustomerService {
         Long id = customerDTO.getId();
 
         logger.info("will be checking if id - {} is valid", customerDTO.getId());
-        if(id == null || id < MINIMUM_ID_RANGE) {
+        if(id == null || id < MINIMUM_ID_RANGE || id >= MAXIMUM_ID_RANGE) {
             logger.warn("invalid id - {}", id);
             throw new BadRequestException("invalid id - " + id);
         }
@@ -108,7 +109,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public boolean removeCustomer(long id) {
         logger.info("will be checking if id - {} is valid", id);
-        if(id < MINIMUM_ID_RANGE) {
+        if(id < MINIMUM_ID_RANGE || id >= MAXIMUM_ID_RANGE) {
             logger.warn("invalid id - {}", id);
             throw new BadRequestException("invalid id - " + id);
         }
