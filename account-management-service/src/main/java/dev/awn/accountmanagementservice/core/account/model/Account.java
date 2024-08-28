@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "ACCOUNTS")
@@ -19,7 +20,7 @@ public class Account {
     @Id
     private Long id;
 
-    @Column(name = "CUSTOMER_ID")
+    @Column(name = "CUSTOMER_ID", updatable = false)
     private Long customerId;
 
     @Column(name = "BALANCE")
@@ -32,4 +33,10 @@ public class Account {
     @Column(name = "TYPE")
     @Enumerated(EnumType.STRING)
     private AccountType type;
+
+    @Column(name = "CREATION_TIME")
+    private LocalDateTime creationTime;
+
+    @Column(name = "MODIFICATION_TIME")
+    private LocalDateTime modificationTime;
 }

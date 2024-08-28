@@ -5,11 +5,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 public interface AccountService {
-    AccountDTO getAccount(Long id);
+    AccountDTO getAccount(long id);
 
     AccountDTO createAccount(AccountDTO accountDTO);
 
     AccountDTO modifyAccount(AccountDTO accountDTO);
 
-    boolean removeAccount(Long id);
+    boolean removeAccount(long id);
 }
