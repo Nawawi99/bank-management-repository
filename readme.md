@@ -1,37 +1,17 @@
+# Customer and Account Management Microservices
 
-Assume you are in an agile team, and you are assigned to set up 2 co-dependent microservices,
-one responsible for the management of bank customers, and the other responsible for
-management of customer accounts, the following requirements are given.
-Task Request Logic as below:
-1. A customer must have a name, associated legal id, type, and address (add any other
-   information you feel is relevant).
-2. A customer may have 0 or more accounts.
-3. Customer can have the following types: retail, corporate, investment.
-4. Accounts at minimum must have a balance, account status.
-5. All must be stored in a relational DB (you are free to choose any DB)
-6. The spring boot project follows a proper code structure.
-7. The Rest APIs must follow the Open API Specification standard.
-8. Proper validation in the API request/response, and DB.
-   i. Customer ID should be 7 digits.
-   ii. Account should be 10 digits starting with the customer ID as the starting 7.
-   iii. A customer can have up to 10 accounts.
-   iv. One account can be a salary account, and the rest can be saving or investment.
+## Design Decisions
+The core design approach was to maintain clean code architecture and follow the **Database per Service Pattern**. This ensures that both the Customer and Account services remain loosely coupled, with no direct database relationships. Instead, events are used to manage interactions between the services.
 
-Technical Spec:
-1. Task should be completed in latest stable spring-boot using Java 17+. You will be
-   graded based on the application of latest features of the versions you use.
-2. VCS is required.
-3. Maven or Gradle project is required.
-4. Proper error/exception handling
-5. Proper logging
-6. Access to DB should be through Spring Data JPA.
-7. It is essential to follow TDD and include Unit testing of your code with coverage
-   report (min 70% coverage expected)
-8. In addition to Rest APIs setup events for each service to fulfill an EDA between the
-   two services.
-9. Produce a Readme.md that includes your design decisions, shortcomings, and
-   assumptions.
+## Key Features
+- **Customer Service**: Manages customers with validation on customer data (ID, name, type, etc.).
+- **Account Service**: Manages accounts with tight constraints like account numbers tied to customer IDs and limitations on account types and counts.
+- **Event-Driven Architecture**: When a customer is deleted, an event is emitted, and the Account service listens to the event to delete all associated accounts.
+- **Tight Validation**: Ensures all inputs conform to strict requirements (e.g., 7-digit customer ID, 10-digit account ID).
+- **Controller Advice**: Centralized exception handling to catch and translate exceptions into useful, descriptive responses with appropriate status codes.
+- **Test-Driven Development (TDD)**: Comprehensive unit testing followed the AAA (Arrange-Act-Assert) pattern to ensure a minimum of 70% coverage.
+- **Spring Profiles**: Implemented to handle different environments and configurations cleanly.
 
-Bonus:
-• Demonstrate understanding of Spring Security.
-• Demonstrate understanding & usage of Spring profiles.
+## Assumptions and Shortcomings
+- **Assumptions**: Both services are independent, with `customerId` stored in the Account service to avoid direct relational links between them.
+- **Shortcomings**: Spring Security was not implemented due to the absence of a service registry and a gateway. Introducing Spring Security in this setup could lead to significant duplication of code and data management, which would conflict with the core design decision of maintaining a clean, decoupled architecture with a database per service.
