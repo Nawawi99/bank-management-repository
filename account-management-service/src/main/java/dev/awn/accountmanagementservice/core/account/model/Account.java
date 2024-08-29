@@ -34,7 +34,7 @@ public class Account {
     @Enumerated(EnumType.STRING)
     private AccountType type;
 
-    @Column(name = "CREATION_TIME")
+    @Column(name = "CREATION_TIME", updatable = false)
     private LocalDateTime creationTime;
 
     @Column(name = "MODIFICATION_TIME")

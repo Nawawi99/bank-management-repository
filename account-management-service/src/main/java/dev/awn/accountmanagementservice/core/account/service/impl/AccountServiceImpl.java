@@ -36,9 +36,9 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountDTO getAccount(long id) {
         logger.info("will be checking if id - {} is valid", id);
-        if(id > MINIMUM_ACCOUNT_ID_RANGE || id < MINIMUM_ACCOUNT_ID_RANGE) {
+        if(id > MAXIMUM_ACCOUNT_ID_RANGE || id < MINIMUM_ACCOUNT_ID_RANGE) {
             logger.warn("invalid id - {}", id);
-            throw new BadRequestException("Invalid id - " + id);
+            throw new BadRequestException("invalid id - " + id);
         }
 
         logger.info("will be getting the customer of id - {}", id);
@@ -72,9 +72,11 @@ public class AccountServiceImpl implements AccountService {
             throw new BadRequestException("customerId of - " + customerId + " already has maximum number of accounts allowed");
         }
 
-        Optional<Account> accountOptional = accountRepository.findByCustomerIdAndType(customerId, AccountType.SALARY);
-        if(accountOptional.isPresent()) {
-            throw new BadRequestException("customer of customerId " + customerId + " already has a salary account");
+        if(accountDTO.getType().equals(AccountType.SALARY)) {
+            Optional<Account> accountOptional = accountRepository.findByCustomerIdAndType(customerId, AccountType.SALARY);
+            if(accountOptional.isPresent()) {
+                throw new BadRequestException("customer of customerId " + customerId + " already has a salary account");
+            }
         }
 
         Set<Integer> existingAccountSuffixes = existingAccounts.stream()
@@ -82,15 +84,11 @@ public class AccountServiceImpl implements AccountService {
                                                                .collect(Collectors.toSet());
 
         int newSuffix = -1;
-        for (int i = 1; i <= 999; i++) {
+        for (int i = 1; i <= 10; i++) {
             if (!existingAccountSuffixes.contains(i)) {
                 newSuffix = i;
                 break;
             }
-        }
-
-        if (newSuffix == -1) {
-            throw new BadRequestException("No available account ID for customer ID - " + customerId);
         }
 
         long newAccountId = customerId * 1000 + newSuffix;
@@ -166,14 +164,14 @@ public class AccountServiceImpl implements AccountService {
     }
 
     private CustomerDTO getCustomerById(long customerId) {
-        final String CUSTOMER_SERVICE_URL = "http://customer-service/api/customers/";
+        final String CUSTOMER_SERVICE_URL = "http://localhost:8081/api/v1/customers/";
 
         try {
             String url = CUSTOMER_SERVICE_URL + customerId;
             return restTemplate.getForObject(url, CustomerDTO.class);
         } catch (RestClientException e) {
-            logger.error("Error fetching customer with ID: {}", customerId, e);
-            throw new BadRequestException("Customer service is unavailable or customer does not exist.");
+            logger.error("error fetching customer of id - {}", customerId, e);
+            throw new BadRequestException("customer service is unavailable or customer does not exist.");
         }
     }
 }
