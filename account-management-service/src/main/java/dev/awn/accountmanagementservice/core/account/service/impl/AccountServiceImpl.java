@@ -12,7 +12,9 @@ import dev.awn.accountmanagementservice.core.account.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -72,31 +74,40 @@ public class AccountServiceImpl implements AccountService {
             throw new BadRequestException("customerId of - " + customerId + " already has maximum number of accounts allowed");
         }
 
+        logger.info("will perform account type checking");
         if(accountDTO.getType().equals(AccountType.SALARY)) {
+            logger.info("account type is SALARY, will be searching for account where customerId is {} and type is SALARY", customerId);
             Optional<Account> accountOptional = accountRepository.findByCustomerIdAndType(customerId, AccountType.SALARY);
             if(accountOptional.isPresent()) {
+                logger.warn("found a SALARY account of id - {}, will not be creating the acount", accountOptional.get().getId());
                 throw new BadRequestException("customer of customerId " + customerId + " already has a salary account");
             }
         }
 
+        logger.info("will construct the account id suffixes (last 3 digits)");
         Set<Integer> existingAccountSuffixes = existingAccounts.stream()
                                                                .map(account -> (int) (account.getId() % 1000))
                                                                .collect(Collectors.toSet());
+        logger.info("found the following suffixes -> {}", existingAccountSuffixes);
 
+        logger.info("will attempt to generate a new suffix");
         int newSuffix = -1;
         for (int i = 1; i <= 10; i++) {
             if (!existingAccountSuffixes.contains(i)) {
                 newSuffix = i;
+                logger.info("found new suffix - {}", newSuffix);
                 break;
             }
         }
 
         long newAccountId = customerId * 1000 + newSuffix;
+        logger.info("calculated new account id, produced the following - {}", newAccountId);
         accountDTO.setId(newAccountId);
 
         Account account = accountMapper.toModel(accountDTO);
         account.setCreationTime(LocalDateTime.now());
 
+        logger.info("will be saving the new account");
         Account savedAccount = accountRepository.save(account);
         return accountMapper.toDto(savedAccount);
     }
@@ -143,7 +154,7 @@ public class AccountServiceImpl implements AccountService {
         Account account = accountMapper.toModel(accountDTO);
         account.setModificationTime(LocalDateTime.now());
 
-        logger.info("will be saving new account");
+        logger.info("will be saving modified account");
         Account savedAccount = accountRepository.save(account);
 
         return accountMapper.toDto(savedAccount);
@@ -163,11 +174,24 @@ public class AccountServiceImpl implements AccountService {
         return true;
     }
 
+    @KafkaListener(topics = "account-cleanup-topic",
+            groupId = "account-cleanup-topic-consumer-group")
+    @Transactional
+    public void removeAccountsBy(String customerId) {
+        logger.info("received an event where customer of id - {} was deleted", customerId);
+
+        logger.info("will be deleting all accounts under customer id of - {}", customerId);
+        int accountsDeleted = accountRepository.deleteAllByCustomerId(Long.parseLong(customerId));
+
+        logger.info("removed {} account/s of customer id - {}", accountsDeleted, customerId);
+    }
+
     private CustomerDTO getCustomerById(long customerId) {
         final String CUSTOMER_SERVICE_URL = "http://localhost:8081/api/v1/customers/";
 
         try {
             String url = CUSTOMER_SERVICE_URL + customerId;
+            logger.info("will be hitting the following url to get customer details - {}", url);
             return restTemplate.getForObject(url, CustomerDTO.class);
         } catch (RestClientException e) {
             logger.error("error fetching customer of id - {}", customerId, e);

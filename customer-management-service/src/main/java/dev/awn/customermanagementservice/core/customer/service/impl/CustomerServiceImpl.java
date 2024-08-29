@@ -10,6 +10,7 @@ import dev.awn.customermanagementservice.core.customer.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -24,6 +25,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     @Override
     public CustomerDTO getCustomer(long id) {
@@ -116,6 +118,9 @@ public class CustomerServiceImpl implements CustomerService {
 
         logger.info("will be deleting customer of id - {}", id);
         customerRepository.deleteById(id);
+
+        logger.info("will be emitting an event to account service of removed customer of id - {}", id);
+        kafkaTemplate.send("account-cleanup-topic", String.valueOf(id));
 
         return true;
     }
